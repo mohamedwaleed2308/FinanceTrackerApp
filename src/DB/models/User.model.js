@@ -25,7 +25,7 @@ const userSchema= new Schema({
     userName:{type:String,required:true,minlength:4,maxlength:40,trim:true},
     email:{type:String,required:true,unique:true,lowercase:true},
     isConfirmed:{type:Boolean,default:false},
-    password:{type:String},
+    password:{type:String,select:false,required:true},
     phone:{type:String},
     googleId:{type:String},
     userImage: { secure_url: String, public_id: String },

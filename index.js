@@ -2,6 +2,7 @@ import express from "express"
 import * as dotenv from "dotenv"
 import path from "path"
 import {Bootstrap} from "./src/app.controller.js"
+import { languageType } from "./src/DB/models/User.model.js"
 dotenv.config({path:path.resolve("./src/config/.env")})
 const app = express()
 const port =process.env.PORT || 5000
