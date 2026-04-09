@@ -17,3 +17,23 @@ export const signupSchema = joi.object({
         currency: joi.string().valid(...Object.values(currencyTypes)),
     }).required()
 }).required()
+export const confirmEmailSchema = joi.object({
+    body: joi.object().keys({
+        code: joi.string().pattern(new RegExp(/^[0-9]{5}$/)).required(),
+        email: joi.string().email({
+            tlds: { allow: false },
+            minDomainSegments: 2,
+            maxDomainSegments: 3
+        }).required(),
+    }).required()
+}).required()
+export const loginSchema = joi.object({
+    body: joi.object().keys({
+        password: joi.string().pattern(new RegExp(/^(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[a-zA-Z]).{8,}$/)).required(),
+        email: joi.string().email({
+            tlds: { allow: false },
+            minDomainSegments: 2,
+            maxDomainSegments: 3
+        }).required(),
+    }).required()
+}).required()

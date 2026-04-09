@@ -25,7 +25,7 @@ const userSchema= new Schema({
     userName:{type:String,required:true,minlength:4,maxlength:40,trim:true},
     email:{type:String,required:true,unique:true,lowercase:true},
     isConfirmed:{type:Boolean,default:false},
-    password:{type:String,select:false,required:true},
+    password:{type:String,required:true},
     phone:{type:String},
     googleId:{type:String},
     userImage: { secure_url: String, public_id: String },
@@ -45,6 +45,6 @@ const userSchema= new Schema({
     deletedAt:Date
 },{timestamps:true})
 
-userSchema.index({email:1})
+// userSchema.index({email:1})
 
 export const userModel= mongoose.models.User || model('User',userSchema)
