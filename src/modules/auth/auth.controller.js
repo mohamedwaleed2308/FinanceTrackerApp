@@ -7,6 +7,8 @@ const router=Router();
 router.post('/signup',validation(validators.signupSchema),authService.signup)
 router.post('/confirm-email',validation(validators.confirmEmailSchema),authService.confirmEmail)
 router.post('/login',validation(validators.loginSchema),authService.login)
+router.post('/forget-password',validation(validators.forgetPasswordSchema),authService.forgetPassword)
+router.post('/reset-password',validation(validators.resetPasswordSchema),authService.resetPassword)
 router.post('/refresh-token',authService.refreshToken)
 
 export default router;

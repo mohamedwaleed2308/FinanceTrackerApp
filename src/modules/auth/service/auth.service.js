@@ -3,7 +3,7 @@ import { userModel } from "../../../DB/models/User.model.js";
 import { asyncHandler } from "../../../utilis/response/error.response.js";
 import { successResponse } from "../../../utilis/response/success.response.js";
 import { comparing, hashing } from "../../../utilis/security/hash.js";
-import { otpModel } from "../../../DB/models/OtpSetting.model.js";
+import { otpModel, otpTypes } from "../../../DB/models/OtpSetting.model.js";
 import { sendEmail } from "../../../utilis/email/sendEmail.js";
 import { generateToken, verifyToken } from "../../../utilis/security/token.js";
 import { RefreshTokenModel } from "../../../DB/models/RefresToken.model.js";
@@ -35,7 +35,7 @@ export const signup = asyncHandler(
             userId: user._id,
             otp: hashing({ plainText: otp }),
             expiresAt: new Date(Date.now() + (2 * 60 * 60 * 1000)),
-            otpType: 'emailConfirmation'
+            otpType: otpTypes.emailConfirmation
         })
         try {
             await sendEmail({
@@ -102,6 +102,47 @@ export const login = asyncHandler(
 
 
         return successResponse({ res, message: 'login done', status: 200, data: { accessToken, refreshToken } })
+    }
+)
+export const forgetPassword=asyncHandler(
+    async(req,res,next)=>{
+        const {email}=req.validatedData.body;
+        const user=await userModel.findOne({email,isConfirmed:true});
+        if (!user) {
+            return next(new Error('user not exist or not confirmed',{cause:404}))
+        }
+        const code= customAlphabet('0123456789',5)()
+        await sendEmail({to:email,subject:'forget password',text:'Use this code to reset password',code})
+        await otpModel.create({
+            userId:user._id,
+            otp:hashing({plainText:code}),
+            expiresAt:new Date(Date.now()+ (2*60*60*1000)),
+            otpType:otpTypes.resetPassword
+        })
+        return successResponse({res,message:'forget password code is send',status:200})
+
+    }
+)
+export const resetPassword=asyncHandler(
+    async(req,res,next)=>{
+        const {email,code,password}=req.validatedData.body;
+        const user=await userModel.findOne({email,isConfirmed:true});
+        if (!user) {
+            return next(new Error('user not exist or not confirmed',{cause:404}))
+        }
+        const findCode=await otpModel.findOne({userId:user._id,otpType:otpTypes.resetPassword});
+        if(Date.now()>Date.parse(findCode.expiresAt)){
+            return next(new Error('your otp is expired, please return to forget password',{cause:400}))
+        }
+        if (!comparing({plainText:code,hashValue:findCode.otp})) {
+            return next(new Error('code is not correct',{cause:404}))
+        }
+        if (comparing({plainText:password,hashValue:user.password})) {
+            return next(new Error('new password is match with old password'))
+        }
+        await userModel.findByIdAndUpdate(user._id,{password:hashing({plainText:password})})
+        return successResponse({res,message:'password is updated',status:200})
+
     }
 )
 

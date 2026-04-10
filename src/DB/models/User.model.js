@@ -45,6 +45,15 @@ const userSchema= new Schema({
     deletedAt:Date
 },{timestamps:true})
 
-// userSchema.index({email:1})
+// this for creat the first user automatically as an Admin 
+// to controll any thing and add admin and ....etc
+userSchema.pre('save',async function () {
+    if (this.isNew) {
+        const adminExists= await this.constructor.exists({role:roleTypes.admin})
+        if (!adminExists) {
+            this.role = roleTypes.admin
+        }
+    }
+})
 
 export const userModel= mongoose.models.User || model('User',userSchema)

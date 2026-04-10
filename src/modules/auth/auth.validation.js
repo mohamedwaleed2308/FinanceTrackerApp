@@ -37,3 +37,24 @@ export const loginSchema = joi.object({
         }).required(),
     }).required()
 }).required()
+export const forgetPasswordSchema = joi.object({
+    body: joi.object().keys({
+        email: joi.string().email({
+            tlds: { allow: false },
+            minDomainSegments: 2,
+            maxDomainSegments: 3
+        }).required(),
+    }).required()
+}).required()
+export const resetPasswordSchema = joi.object({
+    body: joi.object().keys({
+        email: joi.string().email({
+            tlds: { allow: false },
+            minDomainSegments: 2,
+            maxDomainSegments: 3
+        }).required(),
+        password: joi.string().pattern(new RegExp(/^(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[a-zA-Z]).{8,}$/)).required(),
+        confirmPassword:joi.string().valid(joi.ref('password')),
+        code: joi.string().pattern(new RegExp(/^[0-9]{5}$/)).required(),
+    }).required()
+}).required()
