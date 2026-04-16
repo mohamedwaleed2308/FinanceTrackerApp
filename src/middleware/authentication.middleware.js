@@ -25,7 +25,7 @@ export const authentication=()=>{
         }
         const user = await userModel.findOne({_id:decoded.id,isActive:true});
         if (!user) {
-            return next(new Error('token not authorized',{cause:401}))
+            return next(new Error('user not found',{cause:404}))
         }
         req.user=user;
         next();

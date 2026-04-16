@@ -6,7 +6,7 @@ import { authentication } from "../../middleware/authentication.middleware.js";
 
 const router=Router();
 router.get('/profile',authentication(),userService.profile)
-router.put('/update-profile',authentication(),userService.profile)
+router.put('/update-profile',validation(validator.updateSchema),authentication(),userService.updateProfile)
 
 
 export default router;
