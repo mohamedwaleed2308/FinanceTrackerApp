@@ -9,6 +9,7 @@ router.post('/confirm-email',validation(validators.confirmEmailSchema),authServi
 router.post('/login',validation(validators.loginSchema),authService.login)
 router.post('/forget-password',validation(validators.forgetPasswordSchema),authService.forgetPassword)
 router.post('/reset-password',validation(validators.resetPasswordSchema),authService.resetPassword)
+router.post('/reActive-profile',validation(validators.reActiveProfile),authService.reActiveProfile)
 router.post('/refresh-token',authService.refreshToken)
 
 export default router;

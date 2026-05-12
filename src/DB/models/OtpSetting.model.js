@@ -3,6 +3,7 @@ import mongoose, { model, Schema, Types } from "mongoose";
 export const otpTypes={
     emailConfirmation:'emailConfirmation',
     resetPassword:'resetPassword',
+    reActivation:'reActivation',
     
 }
 

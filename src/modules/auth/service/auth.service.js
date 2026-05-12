@@ -88,6 +88,19 @@ export const login = asyncHandler(
         if (!user) {
             return next(new Error('email or password not correct', { cause: 404 }))
         }
+        // this condition only if the user profile is not active or in soft delete case
+        if (!user.isActive) {
+            const otp=customAlphabet('0123456789',5)()
+            await otpModel.create({
+                userId:user._id,
+                otp:hashing({plainText:otp}),
+                expiresAt:new Date(Date.now() + (2*60*60*1000)),
+                otpType:otpTypes.reActivation
+            })
+            await sendEmail({to:email,text:'please reActive your email',subject:'reAtive Email',code:otp})
+            return next(new Error('Account is deactivated. Reactivation code sent',{cause:401}))
+        }
+
         if (!comparing({ plainText: password, hashValue: user.password })) {
             return next(new Error('email or password not correct', { cause: 400 }))
         }
@@ -143,6 +156,33 @@ export const resetPassword=asyncHandler(
         await userModel.findByIdAndUpdate(user._id,{password:hashing({plainText:password})})
         return successResponse({res,message:'password is updated',status:200})
 
+    }
+)
+
+export const reActiveProfile=asyncHandler(
+    async(req,res,next)=>{
+        const {email,reActiveCode}=req.validatedData.body;
+        const user= await userModel.findOne({email})
+        if (!user) {
+            return next(new Error('user not found',{cause:404}));
+        }
+        if (user.isActive) {
+            return next(new Error('profile is already active',{cause:400}))
+        }
+        const code = await otpModel.findOne({userId:user._id,otpType:otpTypes.reActivation}).sort({createdAt:-1})
+        if (!code) {
+            return next(new Error('code not found',{cause:404}))
+        }
+        if (Date.now()> Date.parse(code.expiresAt)) {
+            return next(new Error('code is expired',{cause:400}))
+        }
+        if (!comparing({plainText:reActiveCode,hashValue:code.otp})) {
+            return next(new Error('code is not correct',{cause:400}))
+        }
+        user.isActive=true;
+        await user.save()
+        await otpModel.deleteOne({userId:user._id})
+        return successResponse({res,message:'done',status:200})
     }
 )
 

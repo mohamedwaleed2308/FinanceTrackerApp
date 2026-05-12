@@ -42,3 +42,10 @@ export const resetPasswordSchema = joi.object({
         code: globalFields.code.required(),
     }).required()
 }).required()
+
+export const reActiveProfile = joi.object({
+    body: joi.object().keys({
+        email: globalFields.email.required(),
+        reActiveCode: globalFields.code.required(),
+    }).required()
+}).required()
