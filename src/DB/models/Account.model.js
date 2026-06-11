@@ -1,5 +1,5 @@
 import mongoose, { model, Schema, Types } from "mongoose";
-import { currencyTypes } from "./User.model";
+import { currencyTypes } from "./User.model.js";
 
 export const accountType={
     wallet:'wallet',
@@ -13,14 +13,24 @@ export const accountType={
 const accountSchema=new Schema({
     userId:{type:Types.ObjectId,ref:'User',required:true},
     accountName:{type:String,required:true,trim:true,minlength:4,maxlength:50},
-    type:{type:String,enum:Object.values(accountType),required:true},
+    accountType:{type:String,enum:Object.values(accountType),required:true},
     balance:{type:Number,default:0},
     currency:{type:String,enum:Object.values(currencyTypes),default:currencyTypes.EGP},
-    includeInTotal:{type:Boolean,default:true},
-    isArchived:{type:Boolean,default:false},
-    deletedAt:Date
+    deletedAt:{type:Date,default:null},
+    icon:String,
+    color:String,
 
 },{timestamps:true})
 accountSchema.index({userId:1})
+
+accountSchema.index(
+    {
+        userId: 1,
+        accountName: 1
+    },
+    {
+        unique: true
+    }
+);
 
 export const accountModel=mongoose.models.Account || model('Account',accountSchema)

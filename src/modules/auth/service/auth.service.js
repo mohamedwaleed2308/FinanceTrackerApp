@@ -7,6 +7,7 @@ import { otpModel, otpTypes } from "../../../DB/models/OtpSetting.model.js";
 import { sendEmail } from "../../../utilis/email/sendEmail.js";
 import { generateToken, verifyToken } from "../../../utilis/security/token.js";
 import { RefreshTokenModel } from "../../../DB/models/RefresToken.model.js";
+import { categoryModel, defaultCategories } from "../../../DB/models/Category.model.js";
 
 
 export const signup = asyncHandler(
@@ -22,6 +23,13 @@ export const signup = asyncHandler(
                     language: language || 'english'
                 }
             });
+            await categoryModel.insertMany(
+                defaultCategories.map(category =>
+                ({
+                    ...category,
+                    userId: user._id
+                }))
+            )
         } catch (error) {
             // when 2 user create by same email in the same time so this make error
             // 11000 => MongoDB duplicate key error (unique constraint violation)
@@ -90,15 +98,15 @@ export const login = asyncHandler(
         }
         // this condition only if the user profile is not active or in soft delete case
         if (!user.isActive) {
-            const otp=customAlphabet('0123456789',5)()
+            const otp = customAlphabet('0123456789', 5)()
             await otpModel.create({
-                userId:user._id,
-                otp:hashing({plainText:otp}),
-                expiresAt:new Date(Date.now() + (2*60*60*1000)),
-                otpType:otpTypes.reActivation
+                userId: user._id,
+                otp: hashing({ plainText: otp }),
+                expiresAt: new Date(Date.now() + (2 * 60 * 60 * 1000)),
+                otpType: otpTypes.reActivation
             })
-            await sendEmail({to:email,text:'please reActive your email',subject:'reAtive Email',code:otp})
-            return next(new Error('Account is deactivated. Reactivation code sent',{cause:401}))
+            await sendEmail({ to: email, text: 'please reActive your email', subject: 'reAtive Email', code: otp })
+            return next(new Error('Account is deactivated. Reactivation code sent', { cause: 401 }))
         }
 
         if (!comparing({ plainText: password, hashValue: user.password })) {
@@ -110,79 +118,79 @@ export const login = asyncHandler(
         await RefreshTokenModel.create({
             userId: user._id,
             token: refreshToken, // Remember token is stored hashed not normal
-            expiresAt: new Date(Date.now() + (parseInt(process.env.REFRESH_EXPIRESIN)*1000)),
+            expiresAt: new Date(Date.now() + (parseInt(process.env.REFRESH_EXPIRESIN) * 1000)),
         })
 
 
         return successResponse({ res, message: 'login done', status: 200, data: { accessToken, refreshToken } })
     }
 )
-export const forgetPassword=asyncHandler(
-    async(req,res,next)=>{
-        const {email}=req.validatedData.body;
-        const user=await userModel.findOne({email,isConfirmed:true});
+export const forgetPassword = asyncHandler(
+    async (req, res, next) => {
+        const { email } = req.validatedData.body;
+        const user = await userModel.findOne({ email, isConfirmed: true });
         if (!user) {
-            return next(new Error('user not exist or not confirmed',{cause:404}))
+            return next(new Error('user not exist or not confirmed', { cause: 404 }))
         }
-        const code= customAlphabet('0123456789',5)()
-        await sendEmail({to:email,subject:'forget password',text:'Use this code to reset password',code})
+        const code = customAlphabet('0123456789', 5)()
+        await sendEmail({ to: email, subject: 'forget password', text: 'Use this code to reset password', code })
         await otpModel.create({
-            userId:user._id,
-            otp:hashing({plainText:code}),
-            expiresAt:new Date(Date.now()+ (2*60*60*1000)),
-            otpType:otpTypes.resetPassword
+            userId: user._id,
+            otp: hashing({ plainText: code }),
+            expiresAt: new Date(Date.now() + (2 * 60 * 60 * 1000)),
+            otpType: otpTypes.resetPassword
         })
-        return successResponse({res,message:'forget password code is send',status:200})
+        return successResponse({ res, message: 'forget password code is send', status: 200 })
 
     }
 )
-export const resetPassword=asyncHandler(
-    async(req,res,next)=>{
-        const {email,code,password}=req.validatedData.body;
-        const user=await userModel.findOne({email,isConfirmed:true});
+export const resetPassword = asyncHandler(
+    async (req, res, next) => {
+        const { email, code, password } = req.validatedData.body;
+        const user = await userModel.findOne({ email, isConfirmed: true });
         if (!user) {
-            return next(new Error('user not exist or not confirmed',{cause:404}))
+            return next(new Error('user not exist or not confirmed', { cause: 404 }))
         }
-        const findCode=await otpModel.findOne({userId:user._id,otpType:otpTypes.resetPassword});
-        if(Date.now()>Date.parse(findCode.expiresAt)){
-            return next(new Error('your otp is expired, please return to forget password',{cause:400}))
+        const findCode = await otpModel.findOne({ userId: user._id, otpType: otpTypes.resetPassword });
+        if (Date.now() > Date.parse(findCode.expiresAt)) {
+            return next(new Error('your otp is expired, please return to forget password', { cause: 400 }))
         }
-        if (!comparing({plainText:code,hashValue:findCode.otp})) {
-            return next(new Error('code is not correct',{cause:404}))
+        if (!comparing({ plainText: code, hashValue: findCode.otp })) {
+            return next(new Error('code is not correct', { cause: 404 }))
         }
-        if (comparing({plainText:password,hashValue:user.password})) {
+        if (comparing({ plainText: password, hashValue: user.password })) {
             return next(new Error('new password is match with old password'))
         }
-        await userModel.findByIdAndUpdate(user._id,{password:hashing({plainText:password})})
-        return successResponse({res,message:'password is updated',status:200})
+        await userModel.findByIdAndUpdate(user._id, { password: hashing({ plainText: password }) })
+        return successResponse({ res, message: 'password is updated', status: 200 })
 
     }
 )
 
-export const reActiveProfile=asyncHandler(
-    async(req,res,next)=>{
-        const {email,reActiveCode}=req.validatedData.body;
-        const user= await userModel.findOne({email})
+export const reActiveProfile = asyncHandler(
+    async (req, res, next) => {
+        const { email, reActiveCode } = req.validatedData.body;
+        const user = await userModel.findOne({ email })
         if (!user) {
-            return next(new Error('user not found',{cause:404}));
+            return next(new Error('user not found', { cause: 404 }));
         }
         if (user.isActive) {
-            return next(new Error('profile is already active',{cause:400}))
+            return next(new Error('profile is already active', { cause: 400 }))
         }
-        const code = await otpModel.findOne({userId:user._id,otpType:otpTypes.reActivation}).sort({createdAt:-1})
+        const code = await otpModel.findOne({ userId: user._id, otpType: otpTypes.reActivation }).sort({ createdAt: -1 })
         if (!code) {
-            return next(new Error('code not found',{cause:404}))
+            return next(new Error('code not found', { cause: 404 }))
         }
-        if (Date.now()> Date.parse(code.expiresAt)) {
-            return next(new Error('code is expired',{cause:400}))
+        if (Date.now() > Date.parse(code.expiresAt)) {
+            return next(new Error('code is expired', { cause: 400 }))
         }
-        if (!comparing({plainText:reActiveCode,hashValue:code.otp})) {
-            return next(new Error('code is not correct',{cause:400}))
+        if (!comparing({ plainText: reActiveCode, hashValue: code.otp })) {
+            return next(new Error('code is not correct', { cause: 400 }))
         }
-        user.isActive=true;
+        user.isActive = true;
         await user.save()
-        await otpModel.deleteOne({userId:user._id})
-        return successResponse({res,message:'done',status:200})
+        await otpModel.deleteOne({ userId: user._id })
+        return successResponse({ res, message: 'done', status: 200 })
     }
 )
 
@@ -193,12 +201,12 @@ export const refreshToken = asyncHandler(
             return next(new Error('token is required', { cause: 400 }))
         }
         const { id, exp } = verifyToken({ token, signature: process.env.REFRESH_SIGNATURE })
-        const userToken = await RefreshTokenModel.findOne({ userId: id,token })
+        const userToken = await RefreshTokenModel.findOne({ userId: id, token })
         if (!userToken) {
             return next(new Error('token is not valid', { cause: 401 }))
         }
-        if (userToken.token ==! token) {
-            return next(new Error('token is not valid',{cause:400}))
+        if (userToken.token == !token) {
+            return next(new Error('token is not valid', { cause: 400 }))
         }
         // console.log(Date.parse(userToken.expiresAt)/1000,exp) 
         if (Date.now() > Date.parse(userToken.expiresAt)) {
