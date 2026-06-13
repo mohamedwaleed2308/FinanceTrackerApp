@@ -39,6 +39,13 @@ export const globalFields = {
     date: joi.date(),
     title: joi.string().min(4).max(25),
     shopName: joi.string().min(4).max(25),
+    // goal
+    goalName: joi.string().trim().min(4).max(100),
+    targetAmount: joi.number().min(0),
+    targetDate: joi.date().greater('now'),
+    priority: joi.string().valid('high', 'medium', 'low', 'optional'),
+    interval: joi.string().valid('weekly','monthly','yearly'),
+    alertThreshold: joi.number().min(1).max(100)
 }
 export const paginationFields = {
     page: joi.number().integer().min(1).default(1),

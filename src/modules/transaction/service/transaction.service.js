@@ -1,6 +1,10 @@
 import { accountModel } from "../../../DB/models/Account.model.js";
+import { budgetModel } from "../../../DB/models/Budget.model.js";
 import { categoryModel } from "../../../DB/models/Category.model.js";
+import { notificationModel } from "../../../DB/models/Notification.model.js";
 import { statusTypes, transactionModel, transactionTypes } from "../../../DB/models/Transaction.model.js";
+import { userModel } from "../../../DB/models/User.model.js";
+import { sendEmail } from "../../../utilis/email/sendEmail.js";
 import { asyncHandler } from "../../../utilis/response/error.response.js";
 import { successResponse } from "../../../utilis/response/success.response.js";
 
@@ -38,6 +42,48 @@ export const createTransaction = asyncHandler(
         if (transactionType == transactionTypes.expense) {
             account.balance -= amount
         }
+        // --------------- connect budget of category with transaction and notification----------
+        const budget = await budgetModel.findOne({
+            userId: req.user._id,
+            categoryId,
+            isActive: true,
+            deletedAt: null
+        });
+
+        if (budget) {
+            budget.spent += amount;
+            const percentage = (budget.spent / budget.amount) * 100;
+
+            if (percentage >= budget.alertThreshold &&
+                !budget.alertSent
+            ) {
+                // Notification Later
+                await notificationModel.create({
+                    userId: req.user._id,
+                    title: 'Budget Alert',
+                    message: `Your budget has reached ${percentage.toFixed(2)}%`
+                });
+            }
+            budget.alertSent = true;
+            await budget.save();
+            const user = await userModel.findById(
+                req.user._id
+            );
+
+            await sendEmail({
+                to: user.email,
+                subject: 'Budget Alert',
+                html: `
+                    <h2>Budget Alert</h2>
+
+                    <p>
+                        Your budget reached
+                        ${percentage.toFixed(2)}%
+                    </p>
+                    `
+            });
+        }
+        // ---------- end --------------
         await account.save();
         const transaction = await transactionModel.create({
             userId: req.user._id,
@@ -250,19 +296,19 @@ export const deleteTransaction = asyncHandler(
         });
 
         if (!account) {
-            return next(new Error('Account not found',{ cause: 404 }));
+            return next(new Error('Account not found', { cause: 404 }));
         }
 
-        if (transaction.transactionType ===transactionTypes.expense) {
+        if (transaction.transactionType === transactionTypes.expense) {
             account.balance += transaction.amount;
-        }else{ // income
+        } else { // income
             account.balance -= transaction.amount;
         }
 
         await account.save();
         await transaction.deleteOne();
 
-        return successResponse({res,status:200,message:'Transaction deleted successfully'});
+        return successResponse({ res, status: 200, message: 'Transaction deleted successfully' });
     }
 );
 

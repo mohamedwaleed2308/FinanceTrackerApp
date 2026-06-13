@@ -8,6 +8,7 @@ import { sendEmail } from "../../../utilis/email/sendEmail.js";
 import { generateToken, verifyToken } from "../../../utilis/security/token.js";
 import { RefreshTokenModel } from "../../../DB/models/RefresToken.model.js";
 import { categoryModel, defaultCategories } from "../../../DB/models/Category.model.js";
+import { emailTemplate } from "../../../utilis/email/emailTemplate.js";
 
 
 export const signup = asyncHandler(
@@ -50,7 +51,8 @@ export const signup = asyncHandler(
                 to: [email],
                 text: 'please confirm your email',
                 subject: 'cofirmation email',
-                code: otp
+                code: otp,
+                html: emailTemplate(otp)
             })
         } catch (error) {
             return next(new Error('Failed to send email', { cause: 500 }));

@@ -1,6 +1,6 @@
 import nodemailer from "nodemailer";
 import { emailTemplate } from "./emailTemplate.js";
-export const sendEmail= async({to=[],cc=[],bcc=[],subject='',text='',code=''}={})=>{
+export const sendEmail= async({to=[],cc=[],bcc=[],subject='',text='',code='',html=emailTemplate(code)}={})=>{
 
 // Create a transporter using Ethereal test credentials.
 // For production, replace with your actual SMTP server details.
@@ -18,7 +18,7 @@ const transporter = nodemailer.createTransport({
     to,
     subject,
     text, // Plain-text version of the message
-    html: emailTemplate(code), // HTML version of the message
+    html, // HTML version of the message
   });
 
   console.log("Message sent:", info.messageId);

@@ -20,8 +20,7 @@ const savingGoalSchema=new Schema({
     targetDate:{type:Date},
     isCompleted:{type:Boolean,default:false},
     priority:{type:String,enum:Object.values(priorityType),default:priorityType.optional},
-    deletedAt:Date
-
+    deletedAt:{type:Date,default:null}
 },{timestamps:true})
 
 savingGoalSchema.index({userId:1})
