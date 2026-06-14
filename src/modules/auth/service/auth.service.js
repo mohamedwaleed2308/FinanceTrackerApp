@@ -9,6 +9,7 @@ import { generateToken, verifyToken } from "../../../utilis/security/token.js";
 import { RefreshTokenModel } from "../../../DB/models/RefresToken.model.js";
 import { categoryModel, defaultCategories } from "../../../DB/models/Category.model.js";
 import { emailTemplate } from "../../../utilis/email/emailTemplate.js";
+import { OAuth2Client } from "google-auth-library"
 
 
 export const signup = asyncHandler(
@@ -220,5 +221,91 @@ export const refreshToken = asyncHandler(
             expiresIn: process.env.ACCESS_EXPIRESIN
         })
         return successResponse({ res, message: 'done', status: 200, data: { accessToken } })
+    }
+)
+
+// ---------login-Google
+const googleClient = new OAuth2Client(
+    process.env.GOOGLE_CLIENT_ID
+)
+export const googleLogin = asyncHandler(
+    async (req, res, next) => {
+
+        const { idToken } = req.validatedData.body
+
+        const ticket = await googleClient.verifyIdToken({
+            idToken,
+            audience: process.env.GOOGLE_CLIENT_ID
+        })
+
+        const payload = ticket.getPayload()
+        if (!payload) {
+            return next(
+                new Error('Invalid Google Token', { cause: 400 })
+            )
+        }
+
+        const { sub, email, name, picture, email_verified } = payload
+
+        if (!email_verified) {
+            return next(new Error('google account not verified', { cause: 400 }))
+        }
+
+        let user = await userModel.findOne({ email })
+
+        if (user && user.authProvider === 'local') {
+            return next(new Error('This email is registered using password login', { cause: 400 }))
+        }
+        if (!user) {
+            user = await userModel.create({
+                userName: name,
+                email,
+                googleId: sub,
+                authProvider: 'google',
+                isConfirmed: true,
+                userImage: {
+                    secure_url: picture
+                }
+            })
+
+            await categoryModel.insertMany(
+                defaultCategories.map(category => ({
+                    ...category,
+                    userId: user._id
+                }))
+            )
+        }
+
+        if (!user.isActive) {
+            return next(
+                new Error('Account is deactivated', { cause: 401 })
+            )
+        }
+
+        const accessToken = generateToken({
+            payload: { id: user._id },
+            signature: process.env.ACCESS_SIGNATURE,
+            expiresIn: process.env.ACCESS_EXPIRESIN
+        })
+
+        const refreshToken = generateToken({
+            payload: { id: user._id },
+            signature: process.env.REFRESH_SIGNATURE,
+            expiresIn: process.env.REFRESH_EXPIRESIN
+        })
+
+        await RefreshTokenModel.create({
+            userId: user._id,
+            token: refreshToken,
+            expiresAt: new Date(Date.now() + (parseInt(process.env.REFRESH_EXPIRESIN) * 1000))
+        })
+
+        return successResponse({
+            res, status: 200, message: 'google login success',
+            data: {
+                accessToken,
+                refreshToken
+            }
+        })
     }
 )

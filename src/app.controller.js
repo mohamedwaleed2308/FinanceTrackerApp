@@ -13,38 +13,40 @@ import recurringRulesController from "./modules/recurring rules/recurring rules.
 import notificationController from "./modules/notification/notification.controller.js"
 import dashboardController from "./modules/dashboard/dashboard.controller.js"
 import { globalErrorHandeling } from "./utilis/response/error.response.js"
+import cors from 'cors'
 
 
-export const Bootstrap=(app,express)=>{
-// convert buffer to data
-app.use(express.json())
-//graphQl APIs
-//app-routing
-app.get('/',(req,res,next)=>{return res.status(200).json({message:'Done'})})
-app.get('/create',(req,res,next)=>{
+export const Bootstrap = (app, express) => {
+    app.use(cors())
+    // convert buffer to data
+    app.use(express.json())
+    //graphQl APIs
+    //app-routing
+    app.get('/', (req, res, next) => { return res.status(200).json({ message: 'Done' }) })
+    app.get('/create', (req, res, next) => {
 
-    userModel.create({userName:'mohamd',email:'memowalied323@gmail.com',password:'123456',monthly_budget:5000})
-})
-//sub-routing
-app.use('/auth',authController)
-app.use('/user',userController)
-app.use('/account',accountController)
-app.use('/transaction',transactionController)
-app.use('/budget',budgetController)
-app.use('/goal',goalController)
-app.use('/system-utility',systemUtilityController)
-app.use('/report',reportController)
-app.use('/recurring-rules',recurringRulesController)
-app.use('/category',categoryController)
-app.use('/notification',notificationController)
-app.use('/dashboard',dashboardController)
+        userModel.create({ userName: 'mohamd', email: 'memowalied323@gmail.com', password: '123456', monthly_budget: 5000 })
+    })
+    //sub-routing
+    app.use('/auth', authController)
+    app.use('/user', userController)
+    app.use('/account', accountController)
+    app.use('/transaction', transactionController)
+    app.use('/budget', budgetController)
+    app.use('/goal', goalController)
+    app.use('/system-utility', systemUtilityController)
+    app.use('/report', reportController)
+    app.use('/recurring-rules', recurringRulesController)
+    app.use('/category', categoryController)
+    app.use('/notification', notificationController)
+    app.use('/dashboard', dashboardController)
 
-//not-found page
-app.use((req,res,next)=>{return res.status(404).json({message:'Page Not Found'})})
+    //not-found page
+    app.use((req, res, next) => { return res.status(404).json({ message: 'Page Not Found' }) })
 
-//DBConnection
-DBconnection()
-// globalErrorHandeling
-app.use(globalErrorHandeling)
+    //DBConnection
+    DBconnection()
+    // globalErrorHandeling
+    app.use(globalErrorHandeling)
 
 }

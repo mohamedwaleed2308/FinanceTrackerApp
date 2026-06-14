@@ -12,4 +12,7 @@ router.post('/reset-password',validation(validators.resetPasswordSchema),authSer
 router.post('/reActive-profile',validation(validators.reActiveProfile),authService.reActiveProfile)
 router.post('/refresh-token',authService.refreshToken)
 
+// --------login-Google
+router.post('/google-login',validation(validators.googleLoginSchema),authService.googleLogin)
+
 export default router;

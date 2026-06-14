@@ -49,3 +49,8 @@ export const reActiveProfile = joi.object({
         reActiveCode: globalFields.code.required(),
     }).required()
 }).required()
+export const googleLoginSchema = joi.object({
+    body: joi.object({
+        idToken: joi.string().required()
+    }).required()
+})
