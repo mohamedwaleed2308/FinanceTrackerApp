@@ -24,7 +24,7 @@ const budgetSchema = new Schema({
     },
     alertThreshold: { type: Number, default: 80, min: 1, max: 100 },
     isActive: { type: Boolean, default: true },
-    deletedAt: Date,
+    deletedAt: {type:Date,default:null},
     alertSent: {type: Boolean,default: false}
 
 }, { timestamps: true })

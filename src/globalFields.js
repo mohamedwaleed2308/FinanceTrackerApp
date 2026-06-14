@@ -44,12 +44,13 @@ export const globalFields = {
     targetAmount: joi.number().min(0),
     targetDate: joi.date().greater('now'),
     priority: joi.string().valid('high', 'medium', 'low', 'optional'),
-    interval: joi.string().valid('weekly','monthly','yearly'),
+    interval: joi.string().valid('weekly', 'monthly', 'yearly'),
     alertThreshold: joi.number().min(1).max(100)
 }
 export const paginationFields = {
     page: joi.number().integer().min(1).default(1),
     size: joi.number().integer().min(1).max(100).default(10),
+    limit: joi.number().min(1).max(20).default(5),
     startDate: joi.date(),
     endDate: joi.date()
 }

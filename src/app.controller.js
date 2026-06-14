@@ -10,6 +10,8 @@ import goalController from "./modules/goal/goal.controller.js"
 import reportController from "./modules/report/report.controller.js"
 import systemUtilityController from "./modules/system&utility/system&utility.controller.js"
 import recurringRulesController from "./modules/recurring rules/recurring rules.controller.js"
+import notificationController from "./modules/notification/notification.controller.js"
+import dashboardController from "./modules/dashboard/dashboard.controller.js"
 import { globalErrorHandeling } from "./utilis/response/error.response.js"
 
 
@@ -34,6 +36,8 @@ app.use('/system-utility',systemUtilityController)
 app.use('/report',reportController)
 app.use('/recurring-rules',recurringRulesController)
 app.use('/category',categoryController)
+app.use('/notification',notificationController)
+app.use('/dashboard',dashboardController)
 
 //not-found page
 app.use((req,res,next)=>{return res.status(404).json({message:'Page Not Found'})})

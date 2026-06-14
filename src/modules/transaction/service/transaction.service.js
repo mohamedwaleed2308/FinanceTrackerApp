@@ -7,6 +7,7 @@ import { userModel } from "../../../DB/models/User.model.js";
 import { sendEmail } from "../../../utilis/email/sendEmail.js";
 import { asyncHandler } from "../../../utilis/response/error.response.js";
 import { successResponse } from "../../../utilis/response/success.response.js";
+import mongoose from 'mongoose';
 
 
 export const createTransaction = asyncHandler(
@@ -312,3 +313,167 @@ export const deleteTransaction = asyncHandler(
     }
 );
 
+// Dashboard
+export const calculateTransactionOverview = async (userId) => {
+
+    const transactions =await transactionModel.find({
+            userId,
+            deletedAt: null
+        });
+
+    const totalIncome =transactions.filter( transaction =>transaction.type ==='income')
+            .reduce((sum, transaction) =>sum +transaction.amount,0);
+
+    const totalExpense =transactions.filter( transaction =>transaction.type ==='expense')
+            .reduce((sum, transaction) =>sum +transaction.amount,0);
+
+    return {
+        totalIncome,
+        totalExpense,
+        netSavings:totalIncome - totalExpense
+    };
+};
+export const getRecentTransactions = async (userId, limit = 5) => {
+
+    return await transactionModel.find({
+            userId,
+            deletedAt: null
+        }).sort({
+            createdAt: -1
+        }).limit(limit).populate('categoryId','categoryName').populate('accountId','accountName');
+};
+export const calculateExpenseBreakdown = async (userId) => {
+
+    return await transactionModel.aggregate([
+        {
+            $match: {
+                userId:new mongoose.Types.ObjectId(userId ),
+                type: 'expense'
+            }
+        },
+        {
+            $group: {
+                _id: '$categoryId',
+                totalAmount: {$sum: '$amount'}
+            }
+        },
+
+        {
+            $lookup: {
+                from: 'categories',
+                localField: '_id',
+                foreignField: '_id',
+                as: 'category'
+            }
+        },
+
+        {
+            $unwind: '$category'
+        },
+
+        {
+            $project: {
+                _id: 0,
+                categoryName:'$category.categoryName',
+                totalAmount: 1
+            }
+        }
+    ]);
+};
+export const calculateWeeklyComparison = async (userId) => {
+
+    const now =new Date();
+    const currentWeekStart =new Date(now);
+    currentWeekStart.setDate( now.getDate() -now.getDay());
+    currentWeekStart.setHours(0,0,0,0);
+    const previousWeekStart =new Date(currentWeekStart);
+    previousWeekStart.setDate(previousWeekStart.getDate() -7);
+    const previousWeekEnd =new Date(currentWeekStart);
+    const currentWeekExpense =await transactionModel.aggregate([
+            {
+                $match: {
+                    userId:new mongoose.Types.ObjectId(userId),
+                    type:'expense',
+                    createdAt: {
+                        $gte:currentWeekStart
+                    }
+                }
+            },
+            {
+                $group: {
+                    _id: null,
+                    total: {$sum:'$amount'}
+                }
+            }
+        ]);
+
+    const previousWeekExpense =await transactionModel.aggregate([
+            {
+                $match: {
+                    userId:new mongoose.Types.ObjectId(userId),
+                    type:'expense',
+                    createdAt: {
+                        $gte:previousWeekStart,
+                        $lt:previousWeekEnd
+                    }
+                }
+            },
+            {
+                $group: {
+                    _id: null,
+                    total: {$sum:'$amount'}
+                }
+            }
+        ]);
+
+    const current =currentWeekExpense[0]?.total || 0;
+
+    const previous =previousWeekExpense[0]?.total || 0;
+
+    return {
+        currentWeekExpense:current,
+
+        previousWeekExpense: previous,
+
+        changePercentage:
+            previous === 0? 100: Number((((current -previous) /previous) *100).toFixed(2))
+    };
+};
+// totalIncome - totalExpense - netSaving
+export const transactionOverview = asyncHandler(
+    async (req, res, next) => {
+
+        const data =await calculateTransactionOverview(req.user._id);
+
+        return successResponse({res,message: 'Transaction overview retrieved successfully',data});
+    }
+);
+// recentTransaction
+export const recentTransactions = asyncHandler(
+    async (req, res, next) => {
+
+        const { limit = 5 } = req.validatedData.query;
+
+        const transactions = await getRecentTransactions(req.user._id, limit);
+
+        return successResponse({ res, message: 'Recent transactions retrieved successfully', data: { transactions } });
+    }
+);
+// expenseBreakdown
+export const expenseBreakdown = asyncHandler(
+    async (req, res, next) => {
+
+        const breakdown = await calculateExpenseBreakdown(req.user._id);
+
+        return successResponse({ res, message: 'Expense breakdown retrieved successfully', data: { breakdown } });
+    }
+);
+// weeklyComparison
+export const weeklyComparison = asyncHandler(
+    async (req, res, next) => {
+
+        const data = await calculateWeeklyComparison(req.user._id);
+
+        return successResponse({ res, message: 'Weekly comparison retrieved successfully', data });
+    }
+);

@@ -13,6 +13,8 @@ router.delete('/:accountId', authentication(), validation(validator.deleteAccoun
 router.patch('/:accountId/restore', authentication(), validation(validator.restoreAccount), accountService.restoreAccount)
 
 router.get('/:accountId/transaction',authentication(),validation(validator.getAccountTransactions),accountService.getAccountTransactions)
+// Dashboard
+router.get('total-balance',authentication(),accountService.totalBalance)
 export default router;
 
 // GET /accounts/:accountId/transactions

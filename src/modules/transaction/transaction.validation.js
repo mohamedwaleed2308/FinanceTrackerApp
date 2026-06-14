@@ -47,4 +47,9 @@ export const deleteTransaction = joi.object({
         transactionId:globalFields.id.required()
     }).required(),
 });
+export const recentTransactions = joi.object({
+    query: joi.object({
+        limit: paginationFields.limit
+    })
+});
 

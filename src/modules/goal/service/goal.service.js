@@ -233,3 +233,38 @@ export const deleteGoal = asyncHandler(
         return successResponse({ res, message: 'Goal deleted successfully' });
     }
 );
+
+// Dashboard
+export const calculateGoalStatistics = async (userId) => {
+
+    const goals = await savingGoalModel.find({
+        userId,
+        deletedAt: null
+    });
+
+    const totalGoals = goals.length;
+
+    const completedGoals = goals.filter(goal => goal.isCompleted).length;
+
+    const totalTargetAmount = goals.reduce((sum, goal) =>sum + goal.targetAmount, 0);
+
+    const totalSavedAmount = goals.reduce((sum, goal) =>sum + goal.currentAmount, 0);
+
+    return {
+        totalGoals,
+        completedGoals,
+        activeGoals: totalGoals - completedGoals,
+        totalTargetAmount,
+        totalSavedAmount,
+        overallProgress: totalTargetAmount > 0
+            ? Number((totalSavedAmount / totalTargetAmount * 100).toFixed(2)) : 0
+    };
+};
+export const goalStatistics = asyncHandler(
+    async (req, res, next) => {
+
+        const data = await calculateGoalStatistics(req.user._id);
+
+        return successResponse({ res, message: 'Goal statistics retrieved successfully', data });
+    }
+);

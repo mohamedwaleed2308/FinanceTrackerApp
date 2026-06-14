@@ -140,19 +140,19 @@ export const updateBudget = asyncHandler(
         }
 
         if (amount) {
-            budget.amount=amount
+            budget.amount = amount
         }
         if (startDate) {
-            budget.startDate=startDate
+            budget.startDate = startDate
         }
         if (endDate) {
-            budget.endDate=endDate
+            budget.endDate = endDate
         }
         if (interval) {
-            budget.interval=interval
+            budget.interval = interval
         }
         if (alertThreshold) {
-            budget.alertThreshold=alertThreshold
+            budget.alertThreshold = alertThreshold
         }
 
         await budget.save();
@@ -188,33 +188,34 @@ export const deleteBudget = asyncHandler(
 );
 
 // Dashboard
+export const calculateBudgetStatistics = async (userId) => {
+
+    const budgets = await budgetModel.find({
+        userId,
+        deletedAt: null
+    });
+
+    const totalBudget = budgets.reduce((sum, budget) =>sum + budget.amount, 0);
+
+    const totalSpent = budgets.reduce((sum, budget) =>sum + budget.spent, 0);
+
+    const remaining = totalBudget - totalSpent;
+
+    const usagePercentage = totalBudget > 0 ? Number((totalSpent / totalBudget * 100).toFixed(2)) : 0;
+
+    return {
+        totalBudget,
+        totalSpent,
+        remaining,
+        usagePercentage
+    };
+};
+
 export const getBudgetStatistics = asyncHandler(
     async (req, res, next) => {
 
-        const budgets = await budgetModel.find({
-            userId: req.user._id,
-            deletedAt: null,
-            isActive: true
-        });
+        const data = await calculateBudgetStatistics(req.user._id);
 
-        const totalBudget = budgets.reduce((sum, budget) =>
-            sum + budget.amount, 0);
-
-        const totalSpent = budgets.reduce((sum, budget) =>
-            sum + budget.spent, 0);
-
-        const remaining = totalBudget - totalSpent;
-
-        const usagePercentage = totalBudget > 0 ? (totalSpent / totalBudget) * 100 : 0;
-
-        return successResponse({
-            res, message: 'Budget statistics retrieved successfully',
-            data: {
-                totalBudget,
-                totalSpent,
-                remaining,
-                usagePercentage: Number(usagePercentage.toFixed(2))
-            }
-        });
+        return successResponse({ res, message: 'Budget statistics retrieved successfully', data });
     }
 );

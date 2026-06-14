@@ -16,8 +16,28 @@ router.patch('/update-transaction/:transactionId',authentication(),
 validation(validator.updateTransaction),transactionService.updateTransaction)
 router.delete('/delete-transactio/:transactionId',authentication(),validation(validator.deleteTransaction))
 
+// Dashboard 
+router.get('/overview',authentication(),transactionService.transactionOverview)
+router.get('/recent',authentication(),validation(validator.recentTransactions),transactionService.recentTransactions)
+router.get('/weekly-comparison',authentication(),)
+// Dashboard (pie Chart)
+router.get('/expense-breakdown',authentication(),transactionService.expenseBreakdown)
 export default router;
 
+// expenseBreakdown example for pie chart #####
+// {
+//     "breakdown":[
+//         {
+//             "categoryName":"Food",
+//             "totalAmount":3000
+//         },
+//         {
+//             "categoryName":"Transport",
+//             "totalAmount":1200
+//         }
+//     ]
+// }
+// ##########
 // get-transaction
 // GET /transactions?transactionType=(expense,income)
 // GET /transactions?accountId=6843d4f6f1c7a8b9d0e1f2a spicific account

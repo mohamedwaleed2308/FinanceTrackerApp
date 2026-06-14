@@ -192,7 +192,8 @@ export const getAccountTransactions = asyncHandler(
                 'categoryName categoryType'
             ).sort({ date: -1 }).skip(skip).limit(size);
 
-        return successResponse({res, message: 'Account transactions retrieved successfully',
+        return successResponse({
+            res, message: 'Account transactions retrieved successfully',
             data: {
                 account,
                 transactions,
@@ -206,5 +207,27 @@ export const getAccountTransactions = asyncHandler(
                 }
             }
         });
+    }
+);
+
+// Dashboard totalBalance
+export const calculateTotalBalance = async (userId) => {
+
+    const accounts = await accountModel.find({
+        userId,
+        deletedAt: null
+    });
+
+    const totalBalance = accounts.reduce((sum, account) =>sum + account.balance,0);
+    return {
+        totalBalance, accountsCount: accounts.length
+    };
+};
+export const totalBalance = asyncHandler(
+    async (req, res, next) => {
+
+        const data =await calculateTotalBalance(req.user._id);
+
+        return successResponse({res,message:'Total balance retrieved successfully',data});
     }
 );

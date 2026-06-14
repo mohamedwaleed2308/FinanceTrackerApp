@@ -11,4 +11,6 @@ router.get('/:goalId',authentication(),validation(validator.getGoalById),goalSer
 router.patch('/update-goal/:goalId',authentication(),validation(validator.updateGoal),goalService.updateGoal)
 router.patch('/add-funds/:goalId',authentication(),validation(validator.addFunds),goalService.addFunds)
 router.delete('/delete-goal/:goalId',authentication(),validation(validator.deleteGoal),goalService.deleteGoal)
+//Dashboard
+router.get('/statistics',authentication())
 export default router;
