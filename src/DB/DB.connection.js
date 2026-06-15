@@ -1,7 +1,7 @@
 import mongoose from "mongoose";
 
 const DBconnection = () => {
-    mongoose.connect("mongodb://localhost:27017/FinanceTracker").
+    mongoose.connect(process.env.DB_URL).
     then(() => {
             console.log('DB connected successfully')}).
     catch(()=>{
